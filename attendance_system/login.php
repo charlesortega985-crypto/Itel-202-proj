@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id_number = trim($_POST['id_number'] ?? '');
     $password  = $_POST['password'] ?? '';
 
+    
     if (!empty($id_number) && !empty($password)) {
         if (isset($pdo)) {
             try {
