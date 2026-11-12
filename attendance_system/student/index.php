@@ -44,7 +44,7 @@ $enrolled_subjects = [];
 if (isset($pdo) && $user_id > 0) {
     try {
         $stmt_sub = $pdo->prepare("
-            SELECT s.subject_id, s.subject_code, s.subject_title, s.class_time, u.full_name AS prof_name 
+            SELECT s.subject_id, s.subject_code, s.subject_title, s.class_time, s.class_end_time, u.full_name AS prof_name 
             FROM student_subjects ss
             JOIN subjects s ON ss.subject_id = s.subject_id
             JOIN users u ON s.faculty_id = u.user_id
@@ -228,6 +228,20 @@ $total_scans = count($attendance_records);
             border-radius: 16px;
             border: 2px dashed #6366f1;
         }
+
+        /* Pure Text Time Display without Background */
+        .time-text-custom {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-main) !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        [data-theme="dark"] .time-text-custom {
+            color: #ffffff !important;
+        }
     </style>
 </head>
 <body>
@@ -251,15 +265,17 @@ $total_scans = count($attendance_records);
         </div>
 
         <!-- Real-Time Clock Display -->
-        <div class="text-center px-3 py-1 bg-white rounded shadow-sm border inner-box d-none d-lg-block">
+        <div class="text-center px-3 py-1 rounded shadow-sm border inner-box d-none d-lg-block">
             <span id="liveClock" class="fw-bold text-primary small">--:--:-- --</span>
             <span class="text-muted small mx-1">|</span>
             <span id="liveDate" class="text-muted small">Loading date...</span>
         </div>
 
+        <!-- Theme Toggle & Profile Info -->
         <div class="d-flex align-items-center gap-2">
-            <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-sm btn-outline-primary rounded-pill fw-bold">
-                <i id="themeIcon" class="bi bi-moon-stars-fill me-1"></i> <span id="themeText">Dark Mode</span>
+            <!-- Icon-only Theme Toggle Button -->
+            <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-sm btn-outline-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Toggle Theme">
+                <i id="themeIcon" class="bi bi-moon-stars-fill"></i>
             </button>
             <span class="fw-bold me-2 ms-2 text-secondary d-none d-md-inline"><i class="bi bi-person-circle"></i> <?= htmlspecialchars($full_name) ?></span>
             <a href="../logout.php" class="btn btn-outline-danger btn-sm rounded-pill fw-bold"><i class="bi bi-box-arrow-right"></i> Logout</a>
@@ -368,16 +384,19 @@ $total_scans = count($attendance_records);
                                             <div>
                                                 <div class="d-flex align-items-center gap-2 mb-1">
                                                     <span class="badge bg-primary px-2 py-1"><?= htmlspecialchars($sub['subject_code']) ?></span>
-                                                    <strong class="fs-6"><?= htmlspecialchars($sub['subject_title']) ?></strong>
+                                                    <strong class="fs-6 text-body"><?= htmlspecialchars($sub['subject_title']) ?></strong>
                                                 </div>
                                                 <small class="text-muted fw-bold">
                                                     <i class="bi bi-person-video3 me-1 text-primary"></i>Prof. <?= htmlspecialchars($sub['prof_name']) ?>
                                                 </small>
                                             </div>
                                             <div class="text-end">
-                                                <span class="badge bg-primary-subtle text-primary border border-primary px-3 py-1 rounded-pill fw-bold">
-                                                    <i class="bi bi-clock me-1"></i>
+                                                <span class="time-text-custom">
+                                                    <i class="bi bi-clock text-primary"></i>
                                                     <?= !empty($sub['class_time']) ? date('h:i A', strtotime($sub['class_time'])) : 'TBA' ?>
+                                                    <?php if(!empty($sub['class_end_time'])): ?>
+                                                        - <?= date('h:i A', strtotime($sub['class_end_time'])) ?>
+                                                    <?php endif; ?>
                                                 </span>
                                             </div>
                                         </div>
@@ -422,7 +441,7 @@ $total_scans = count($attendance_records);
                                     <td><strong><?= $count++ ?></strong></td>
                                     <td>
                                         <span class="badge bg-primary px-2 py-1 me-1"><?= htmlspecialchars($log['subject_code'] ?? 'General') ?></span>
-                                        <small class="fw-bold"><?= htmlspecialchars($log['subject_title'] ?? '') ?></small>
+                                        <small class="fw-bold text-body"><?= htmlspecialchars($log['subject_title'] ?? '') ?></small>
                                     </td>
                                     <td>
                                         <span class="badge bg-dark bg-opacity-75 text-light border border-secondary font-monospace px-3 py-2 fw-normal">
@@ -477,6 +496,8 @@ $total_scans = count($attendance_records);
     });
 </script>
 
+<!-- Theme JS & Clock JS -->
+<script src="../assets/js/theme.js"></script>
 <script src="clock.js"></script>
 
 </body>

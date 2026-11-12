@@ -80,11 +80,12 @@ if (isset($pdo)) {
         <p class="text-muted mb-0 mt-1">Smart Attendance Monitoring System - Overview</p>
     </div>
 
-    <!-- Navigation Bar -->
+    <!-- Navigation Bar (WITH PROFILE TAB) -->
     <div class="nav-pill-custom d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 px-3">
         <div class="d-flex gap-2">
             <a href="index.php" class="nav-link-item active"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="subjects.php" class="nav-link-item"><i class="bi bi-journal-bookmark"></i> Manage Subjects</a>
+            <a href="profile.php" class="nav-link-item"><i class="bi bi-person-badge"></i> Profile</a>
         </div>
 
         <div class="d-flex align-items-center gap-2">
@@ -155,13 +156,13 @@ if (isset($pdo)) {
                             </div>
 
                             <div class="d-flex gap-2 pt-3 border-top flex-wrap">
-                                <a href="scanner.php?subject_id=<?= $sub['subject_id'] ?>" class="btn btn-success btn-sm rounded-pill fw-bold px-3">
+                                <a href="scanner.php?subject_id=<?= $sub['subject_id'] ?>" class="btn btn-success btn-action-solid btn-sm rounded-pill px-2 py-1 fw-bold">
                                     <i class="bi bi-qr-code-scan me-1"></i> QR Scanner
                                 </a>
-                                <a href="attendance_monitor.php?id=<?= $sub['subject_id'] ?>" class="btn btn-primary btn-sm rounded-pill fw-bold px-3">
+                                <a href="attendance_monitor.php?id=<?= $sub['subject_id'] ?>" class="btn btn-primary btn-action-solid btn-sm rounded-pill px-2 py-1 fw-bold">
                                     <i class="bi bi-display me-1"></i> Live Monitor
                                 </a>
-                                <a href="subject_reports.php?id=<?= $sub['subject_id'] ?>" class="btn btn-outline-secondary btn-sm rounded-pill fw-bold px-3">
+                                <a href="subject_reports.php?id=<?= $sub['subject_id'] ?>" class="btn btn-info btn-action-solid btn-sm rounded-pill px-2 py-1 fw-bold">
                                     <i class="bi bi-file-earmark-bar-graph me-1"></i> Reports Log
                                 </a>
                             </div>

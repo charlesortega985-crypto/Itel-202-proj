@@ -82,11 +82,9 @@ if (isset($_GET['delete_id'])) {
     $delete_id = $_GET['delete_id'];
     if (isset($pdo) && $delete_id > 0) {
         try {
-            // Burahin muna ang kaugnay na student_subjects at attendance logs kung mayroon
             $pdo->prepare("DELETE FROM student_subjects WHERE subject_id = ?")->execute([$delete_id]);
             $pdo->prepare("DELETE FROM attendance WHERE subject_id = ?")->execute([$delete_id]);
 
-            // Burahin ang mismong subject
             $stmt_del = $pdo->prepare("DELETE FROM subjects WHERE subject_id = ? AND faculty_id = ?");
             $stmt_del->execute([$delete_id, $user_id]);
 
@@ -229,28 +227,28 @@ if (isset($pdo)) {
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center gap-1 flex-wrap">
                                                 <!-- Open Scanner -->
-                                                <a href="scanner.php?subject_id=<?= $sub['subject_id'] ?>" class="btn btn-success btn-sm rounded-pill px-2 py-1 fw-bold" title="Scan QR Code">
+                                                <a href="scanner.php?subject_id=<?= $sub['subject_id'] ?>" class="btn btn-success btn-action-solid btn-sm rounded-pill px-2 py-1 fw-bold" title="Scan QR Code">
                                                     <i class="bi bi-qr-code-scan me-1"></i> Scan
                                                 </a>
 
                                                 <!-- Per-Subject Live Monitor -->
-                                                <a href="attendance_monitor.php?id=<?= $sub['subject_id'] ?>" class="btn btn-primary btn-sm rounded-pill px-2 py-1 fw-bold" title="Live Monitor for this Subject">
+                                                <a href="attendance_monitor.php?id=<?= $sub['subject_id'] ?>" class="btn btn-primary btn-action-solid btn-sm rounded-pill px-2 py-1 fw-bold" title="Live Monitor for this Subject">
                                                     <i class="bi bi-display me-1"></i> Monitor
                                                 </a>
 
                                                 <!-- Per-Subject Reports -->
-                                                <a href="subject_reports.php?id=<?= $sub['subject_id'] ?>" class="btn btn-info text-dark btn-sm rounded-pill px-2 py-1 fw-bold" title="View Subject Reports">
+                                                <a href="subject_reports.php?id=<?= $sub['subject_id'] ?>" class="btn btn-info btn-action-solid btn-sm rounded-pill px-2 py-1 fw-bold" title="View Subject Reports">
                                                     <i class="bi bi-file-earmark-bar-graph me-1"></i> Logs
                                                 </a>
 
                                                 <!-- Edit Modal Trigger -->
-                                                <button class="btn btn-warning btn-sm rounded-pill px-2 py-1 fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#editModal<?= $sub['subject_id'] ?>" title="Edit Subject">
-                                                    <i class="bi bi-pencil-square"></i>
+                                                <button class="btn btn-warning btn-action-solid btn-sm rounded-circle p-1 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px;" data-bs-toggle="modal" data-bs-target="#editModal<?= $sub['subject_id'] ?>" title="Edit Subject">
+                                                    <i class="bi bi-pencil-square" style="font-size: 0.8rem;"></i>
                                                 </button>
 
                                                 <!-- Delete Button -->
-                                                <a href="subjects.php?delete_id=<?= $sub['subject_id'] ?>" class="btn btn-danger btn-sm rounded-pill px-2 py-1 fw-bold" onclick="return confirm('Are you sure you want to delete <?= htmlspecialchars($sub['subject_code']) ?>?');" title="Delete Subject">
-                                                    <i class="bi bi-trash-fill"></i>
+                                                <a href="subjects.php?delete_id=<?= $sub['subject_id'] ?>" class="btn btn-danger btn-action-solid btn-sm rounded-circle p-1 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px;" onclick="return confirm('Are you sure you want to delete <?= htmlspecialchars($sub['subject_code']) ?>?');" title="Delete Subject">
+                                                    <i class="bi bi-trash-fill" style="font-size: 0.8rem;"></i>
                                                 </a>
                                             </div>
 

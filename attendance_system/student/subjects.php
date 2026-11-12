@@ -26,7 +26,7 @@ $enrolled_subjects = [];
 if (isset($pdo) && $user_id > 0) {
     try {
         $stmt_sub = $pdo->prepare("
-            SELECT s.subject_id, s.subject_code, s.subject_title, s.class_time, u.full_name AS prof_name, u.email AS prof_email 
+            SELECT s.subject_id, s.subject_code, s.subject_title, s.class_time, s.class_end_time, u.full_name AS prof_name, u.email AS prof_email 
             FROM student_subjects ss
             JOIN subjects s ON ss.subject_id = s.subject_id
             JOIN users u ON s.faculty_id = u.user_id
@@ -52,6 +52,22 @@ if (isset($pdo) && $user_id > 0) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Custom CSS Style -->
     <link rel="stylesheet" href="../assets/css/style.css">
+
+    <style>
+        /* Pure Text Time Display without Background */
+        .time-text-custom {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-main) !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        [data-theme="dark"] .time-text-custom {
+            color: #ffffff !important;
+        }
+    </style>
 </head>
 <body>
 
@@ -80,16 +96,13 @@ if (isset($pdo) && $user_id > 0) {
             <span id="liveDate" class="text-muted small">Loading date...</span>
         </div>
 
+        <!-- Theme Toggle & Profile Info -->
         <div class="d-flex align-items-center gap-2">
             <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-sm btn-outline-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Toggle Theme">
                 <i id="themeIcon" class="bi bi-moon-stars-fill"></i>
             </button>
             <span class="fw-bold me-2 ms-2 text-secondary d-none d-md-inline"><i class="bi bi-person-circle"></i> <?= htmlspecialchars($full_name) ?></span>
-            
-            <!-- Ginawang kulay pula ang text gamit ang text-danger -->
-            <a href="../logout.php" class="btn btn-outline-danger btn-sm rounded-pill fw-bold text-danger">
-                <i class="bi bi-box-arrow-right"></i> Logout
-            </a>
+            <a href="../logout.php" class="btn btn-outline-danger btn-sm rounded-pill fw-bold"><i class="bi bi-box-arrow-right"></i> Logout</a>
         </div>
     </div>
 
@@ -107,7 +120,7 @@ if (isset($pdo) && $user_id > 0) {
                 <div class="col-md-8">
                     <div class="input-group">
                         <span class="input-group-text inner-box border-end-0 text-body"><i class="bi bi-key-fill"></i></span>
-                        <input type="text" name="join_code" class="form-control border-start-0 inner-box text-body" placeholder="Enter Class Code (e.g., A8K2P9)" required>
+                        <input type="text" name="join_code" class="form-control border-start-0 inner-box text-body" placeholder="Enter Class Code (e.g., ABK2P9)" required>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -129,8 +142,12 @@ if (isset($pdo) && $user_id > 0) {
                             <div>
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="badge bg-primary px-3 py-2 fs-6"><?= htmlspecialchars($sub['subject_code']) ?></span>
-                                    <span class="badge bg-info text-dark font-monospace px-3 py-1 rounded-pill fw-bold">
-                                        <i class="bi bi-clock me-1"></i><?= !empty($sub['class_time']) ? date('h:i A', strtotime($sub['class_time'])) : 'TBA' ?>
+                                    <span class="time-text-custom">
+                                        <i class="bi bi-clock text-primary me-1"></i>
+                                        <?= !empty($sub['class_time']) ? date('h:i A', strtotime($sub['class_time'])) : 'TBA' ?>
+                                        <?php if(!empty($sub['class_end_time'])): ?>
+                                            - <?= date('h:i A', strtotime($sub['class_end_time'])) ?>
+                                        <?php endif; ?>
                                     </span>
                                 </div>
                                 
@@ -140,11 +157,8 @@ if (isset($pdo) && $user_id > 0) {
                                 </p>
                             </div>
 
-                            <div class="pt-3 border-top d-flex justify-content-between align-items-center">
+                            <div class="pt-3 border-top">
                                 <small class="text-muted"><i class="bi bi-envelope me-1"></i><?= htmlspecialchars($sub['prof_email'] ?? 'No email listed') ?></small>
-                                <a href="subject_view.php?id=<?= $sub['subject_id'] ?>" class="btn btn-outline-primary btn-sm rounded-pill fw-bold px-3">
-                                    View Class <i class="bi bi-chevron-right ms-1"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
