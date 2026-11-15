@@ -4,7 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
     @session_start();
 }
 
-// Siguraduhing student ang naka-login
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
     header("Location: ../login.php");
     exit;
@@ -58,25 +57,17 @@ if (isset($pdo) && $user_id > 0) {
     }
 }
 
-// 3. Fetch Attendance logs mula sa attendance table
-$attendance_records = [];
+// 3. Fetch TOTAL SCANS COUNT (Optimized for Stat Card)
+$total_scans = 0;
 if (isset($pdo) && $user_id > 0) {
     try {
-        $stmt_logs = $pdo->prepare("
-            SELECT a.scanned_at, a.status, s.subject_code, s.subject_title 
-            FROM attendance a
-            JOIN subjects s ON a.subject_id = s.subject_id
-            WHERE a.student_id = ? 
-            ORDER BY a.scanned_at DESC
-        ");
+        $stmt_logs = $pdo->prepare("SELECT COUNT(*) FROM attendance WHERE student_id = ?");
         $stmt_logs->execute([$user_id]);
-        $attendance_records = $stmt_logs->fetchAll(PDO::FETCH_ASSOC);
+        $total_scans = $stmt_logs->fetchColumn();
     } catch (Exception $e) {
-        $attendance_records = [];
+        $total_scans = 0;
     }
 }
-
-$total_scans = count($attendance_records);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -90,159 +81,8 @@ $total_scans = count($attendance_records);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- QRCode Generator Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
-    <style>
-        :root {
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --header-bg: rgba(255, 255, 255, 0.95);
-            --card-bg: #ffffff;
-            --text-main: #212529;
-            --inner-bg: #f8fafc;
-            --border-color: #e2e8f0;
-            --table-head-bg: #f1f5f9;
-        }
-
-        [data-theme="dark"] {
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            --header-bg: rgba(30, 41, 59, 0.95);
-            --card-bg: #1e293b;
-            --text-main: #ffffff;
-            --inner-bg: #0f172a;
-            --border-color: #334155;
-            --table-head-bg: #0f172a;
-        }
-
-        body {
-            background: var(--bg-gradient);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding-bottom: 40px;
-            color: var(--text-main);
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-
-        [data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, 
-        [data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6,
-        [data-theme="dark"] p, [data-theme="dark"] span, [data-theme="dark"] small,
-        [data-theme="dark"] strong, [data-theme="dark"] b, [data-theme="dark"] label,
-        [data-theme="dark"] .text-dark, [data-theme="dark"] .text-muted, [data-theme="dark"] .text-secondary {
-            color: #ffffff !important;
-        }
-
-        .main-header {
-            background: var(--header-bg);
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        }
-
-        .nav-pill-custom {
-            background: var(--header-bg);
-            border-radius: 15px;
-            padding: 8px;
-        }
-
-        .nav-link-item {
-            border-radius: 10px;
-            padding: 10px 20px;
-            font-weight: 600;
-            color: #555;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        [data-theme="dark"] .nav-link-item {
-            color: #e2e8f0 !important;
-        }
-
-        .nav-link-item.active {
-            background: #6366f1;
-            color: #ffffff !important;
-        }
-
-        .content-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            color: var(--text-main);
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            border-radius: 16px;
-            padding: 20px;
-            color: #ffffff !important;
-        }
-
-        .stat-card * {
-            color: #ffffff !important;
-        }
-
-        .inner-box {
-            background: var(--inner-bg) !important;
-            border: 1px solid var(--border-color) !important;
-        }
-
-        .profile-img-header {
-            width: 75px;
-            height: 75px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 3px solid #6366f1;
-        }
-
-        .profile-icon-fallback {
-            width: 75px;
-            height: 75px;
-            background: #6366f1;
-            color: #ffffff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            margin: 0 auto;
-        }
-
-        .table {
-            color: var(--text-main) !important;
-        }
-
-        [data-theme="dark"] .table {
-            --bs-table-bg: transparent;
-            --bs-table-color: #ffffff;
-        }
-
-        [data-theme="dark"] .table-light {
-            background-color: var(--table-head-bg) !important;
-            color: #ffffff !important;
-        }
-
-        #qrcode img {
-            margin: 0 auto;
-            padding: 15px;
-            background: #ffffff;
-            border-radius: 16px;
-            border: 2px dashed #6366f1;
-        }
-
-        /* Pure Text Time Display without Background */
-        .time-text-custom {
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--text-main) !important;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        [data-theme="dark"] .time-text-custom {
-            color: #ffffff !important;
-        }
-    </style>
+    <!-- Custom CSS Style -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
 
@@ -258,9 +98,10 @@ $total_scans = count($attendance_records);
 
     <!-- Navigation Bar -->
     <div class="nav-pill-custom d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 px-3">
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <a href="index.php" class="nav-link-item active"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="subjects.php" class="nav-link-item"><i class="bi bi-journal-bookmark"></i> Subjects</a>
+            <a href="history.php" class="nav-link-item"><i class="bi bi-clock-history"></i> History</a>
             <a href="profile.php" class="nav-link-item"><i class="bi bi-person-badge"></i> Profile</a>
         </div>
 
@@ -273,7 +114,6 @@ $total_scans = count($attendance_records);
 
         <!-- Theme Toggle & Profile Info -->
         <div class="d-flex align-items-center gap-2">
-            <!-- Icon-only Theme Toggle Button -->
             <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-sm btn-outline-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Toggle Theme">
                 <i id="themeIcon" class="bi bi-moon-stars-fill"></i>
             </button>
@@ -418,60 +258,6 @@ $total_scans = count($attendance_records);
                 </div>
             </div>
 
-        </div>
-
-        <!-- Bottom Attendance Logs Section -->
-        <div class="p-4 rounded-4 inner-box">
-            <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i>Recent Attendance History</h5>
-            
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Subject</th>
-                            <th>Date & Time Scanned</th>
-                            <th class="text-center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (count($attendance_records) > 0): ?>
-                            <?php $count = 1; foreach ($attendance_records as $log): ?>
-                                <tr>
-                                    <td><strong><?= $count++ ?></strong></td>
-                                    <td>
-                                        <span class="badge bg-primary px-2 py-1 me-1"><?= htmlspecialchars($log['subject_code'] ?? 'General') ?></span>
-                                        <small class="fw-bold text-body"><?= htmlspecialchars($log['subject_title'] ?? '') ?></small>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-dark bg-opacity-75 text-light border border-secondary font-monospace px-3 py-2 fw-normal">
-                                            <i class="bi bi-calendar3 me-1 text-primary"></i><?= date('M d, Y', strtotime($log['scanned_at'])) ?>
-                                            <span class="text-muted mx-1">|</span>
-                                            <i class="bi bi-clock me-1 text-primary"></i><?= date('h:i:s A', strtotime($log['scanned_at'])) ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <?php if ($log['status'] === 'Present'): ?>
-                                            <span class="badge bg-success rounded-pill px-3 py-2"><i class="bi bi-check-circle me-1"></i> Present</span>
-                                        <?php elseif ($log['status'] === 'Late'): ?>
-                                            <span class="badge bg-warning text-dark rounded-pill px-3 py-2"><i class="bi bi-clock-history me-1"></i> Late</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-danger rounded-pill px-3 py-2"><i class="bi bi-x-circle me-1"></i> Absent</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="4" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox fs-2 d-block mb-1 text-secondary"></i>
-                                    <small>No attendance logs recorded yet.</small>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
         </div>
 
     </div>

@@ -157,10 +157,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['qr_code'])) {
         <p class="text-muted mb-0 mt-1"><?= htmlspecialchars($subject_info['subject_code']) ?> - <?= htmlspecialchars($subject_info['subject_title']) ?> (Sched: <?= !empty($subject_info['class_time']) ? date('h:i A', strtotime($subject_info['class_time'])) : 'N/A' ?> - <?= !empty($subject_info['class_end_time']) ? date('h:i A', strtotime($subject_info['class_end_time'])) : 'N/A' ?>)</p>
     </div>
 
+    <!-- Navigation Bar (UPDATED: Added Profile) -->
     <div class="nav-pill-custom d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 px-3">
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <a href="index.php" class="nav-link-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="subjects.php" class="nav-link-item"><i class="bi bi-journal-bookmark"></i> Manage Subjects</a>
+            <a href="calendar.php" class="nav-link-item"><i class="bi bi-calendar3"></i> Calendar</a>
+            <a href="profile.php" class="nav-link-item"><i class="bi bi-person-badge"></i> Profile</a>
         </div>
 
         <div class="d-flex align-items-center gap-2">

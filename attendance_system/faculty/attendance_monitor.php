@@ -107,6 +107,7 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../assets/css/style.css">
+    
 </head>
 <body>
 
@@ -119,11 +120,13 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
         <p class="text-muted mb-0 mt-1"><?= htmlspecialchars($subject_info['subject_code']) ?> - <?= htmlspecialchars($subject_info['subject_title']) ?> (Sched: <?= !empty($subject_info['class_time']) ? date('h:i A', strtotime($subject_info['class_time'])) : 'N/A' ?> - <?= !empty($subject_info['class_end_time']) ? date('h:i A', strtotime($subject_info['class_end_time'])) : 'N/A' ?>)</p>
     </div>
 
+    <!-- Navigation Bar (UPDATED: Added Profile) -->
     <div class="nav-pill-custom d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 px-3">
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <a href="index.php" class="nav-link-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
-            <a href="subjects.php" class="nav-link-item"><i class="bi bi-journal-bookmark"></i> Subjects</a>
-            <a href="subject_reports.php?id=<?= $subject_id ?>" class="nav-link-item"><i class="bi bi-file-earmark-bar-graph"></i> Reports Log</a>
+            <a href="subjects.php" class="nav-link-item"><i class="bi bi-journal-bookmark"></i> Manage Subjects</a>
+            <a href="calendar.php" class="nav-link-item"><i class="bi bi-calendar3"></i> Calendar</a>
+            <a href="profile.php" class="nav-link-item"><i class="bi bi-person-badge"></i> Profile</a>
         </div>
 
         <div class="d-flex align-items-center gap-2">
@@ -139,7 +142,7 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="p-3 rounded-4 inner-box border d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary fs-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary fs-3 d-flex align-items-center justify-content-center stat-icon-anim stat-icon-pulse delay-1" style="width: 50px; height: 50px;">
                     <i class="bi bi-people-fill"></i>
                 </div>
                 <div>
@@ -151,7 +154,7 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
 
         <div class="col-md-3">
             <div class="p-3 rounded-4 inner-box border d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success fs-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success fs-3 d-flex align-items-center justify-content-center stat-icon-anim stat-icon-pulse delay-2" style="width: 50px; height: 50px;">
                     <i class="bi bi-check-circle-fill"></i>
                 </div>
                 <div>
@@ -163,7 +166,7 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
 
         <div class="col-md-3">
             <div class="p-3 rounded-4 inner-box border d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning fs-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning fs-3 d-flex align-items-center justify-content-center stat-icon-anim stat-icon-pulse delay-3" style="width: 50px; height: 50px;">
                     <i class="bi bi-clock-history"></i>
                 </div>
                 <div>
@@ -175,7 +178,7 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
 
         <div class="col-md-3">
             <div class="p-3 rounded-4 inner-box border d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-danger bg-opacity-10 p-3 text-danger fs-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                <div class="rounded-circle bg-danger bg-opacity-10 p-3 text-danger fs-3 d-flex align-items-center justify-content-center stat-icon-anim stat-icon-pulse delay-4" style="width: 50px; height: 50px;">
                     <i class="bi bi-x-circle-fill"></i>
                 </div>
                 <div>

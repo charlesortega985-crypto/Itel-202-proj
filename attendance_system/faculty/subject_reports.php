@@ -78,12 +78,13 @@ if (isset($pdo)) {
         <p class="text-muted mb-0 mt-1"><?= htmlspecialchars($subject_info['subject_code']) ?> - <?= htmlspecialchars($subject_info['subject_title']) ?></p>
     </div>
 
-    <!-- Navigation Bar -->
+    <!-- Navigation Bar (UPDATED: Added Profile) -->
     <div class="nav-pill-custom d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 px-3">
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <a href="index.php" class="nav-link-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
-            <a href="subjects.php" class="nav-link-item"><i class="bi bi-journal-bookmark"></i> Subjects</a>
-            <a href="attendance_monitor.php?id=<?= $subject_id ?>" class="nav-link-item"><i class="bi bi-display"></i> Live Monitor</a>
+            <a href="subjects.php" class="nav-link-item"><i class="bi bi-journal-bookmark"></i> Manage Subjects</a>
+            <a href="calendar.php" class="nav-link-item"><i class="bi bi-calendar3"></i> Calendar</a>
+            <a href="profile.php" class="nav-link-item"><i class="bi bi-person-badge"></i> Profile</a>
         </div>
 
         <div class="d-flex align-items-center gap-2">

@@ -52,22 +52,6 @@ if (isset($pdo) && $user_id > 0) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Custom CSS Style -->
     <link rel="stylesheet" href="../assets/css/style.css">
-
-    <style>
-        /* Pure Text Time Display without Background */
-        .time-text-custom {
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--text-main) !important;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        [data-theme="dark"] .time-text-custom {
-            color: #ffffff !important;
-        }
-    </style>
 </head>
 <body>
 
@@ -83,9 +67,10 @@ if (isset($pdo) && $user_id > 0) {
 
     <!-- Navigation Bar -->
     <div class="nav-pill-custom d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 px-3">
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <a href="index.php" class="nav-link-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="subjects.php" class="nav-link-item active"><i class="bi bi-journal-bookmark"></i> Subjects</a>
+            <a href="history.php" class="nav-link-item"><i class="bi bi-clock-history"></i> History</a>
             <a href="profile.php" class="nav-link-item"><i class="bi bi-person-badge"></i> Profile</a>
         </div>
 
@@ -138,29 +123,32 @@ if (isset($pdo) && $user_id > 0) {
             <?php if (count($enrolled_subjects) > 0): ?>
                 <?php foreach ($enrolled_subjects as $sub): ?>
                     <div class="col-md-6">
-                        <div class="p-4 rounded-4 inner-box h-100 d-flex flex-column justify-content-between border">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="badge bg-primary px-3 py-2 fs-6"><?= htmlspecialchars($sub['subject_code']) ?></span>
-                                    <span class="time-text-custom">
-                                        <i class="bi bi-clock text-primary me-1"></i>
-                                        <?= !empty($sub['class_time']) ? date('h:i A', strtotime($sub['class_time'])) : 'TBA' ?>
-                                        <?php if(!empty($sub['class_end_time'])): ?>
-                                            - <?= date('h:i A', strtotime($sub['class_end_time'])) ?>
-                                        <?php endif; ?>
-                                    </span>
+                        <!-- LINK TO SUBJECT VIEW -->
+                        <a href="subject_view.php?id=<?= $sub['subject_id'] ?>" class="text-decoration-none">
+                            <div class="p-4 rounded-4 inner-box h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="badge bg-primary px-3 py-2 fs-6"><?= htmlspecialchars($sub['subject_code']) ?></span>
+                                        <span class="time-text-custom">
+                                            <i class="bi bi-clock text-primary me-1"></i>
+                                            <?= !empty($sub['class_time']) ? date('h:i A', strtotime($sub['class_time'])) : 'TBA' ?>
+                                            <?php if(!empty($sub['class_end_time'])): ?>
+                                                - <?= date('h:i A', strtotime($sub['class_end_time'])) ?>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                    
+                                    <h4 class="fw-bold text-body mb-1"><?= htmlspecialchars($sub['subject_title']) ?></h4>
+                                    <p class="text-muted small mb-3">
+                                        <i class="bi bi-person-video3 me-1 text-primary"></i><strong>Instructor:</strong> Prof. <?= htmlspecialchars($sub['prof_name']) ?>
+                                    </p>
                                 </div>
-                                
-                                <h4 class="fw-bold text-body mb-1"><?= htmlspecialchars($sub['subject_title']) ?></h4>
-                                <p class="text-muted small mb-3">
-                                    <i class="bi bi-person-video3 me-1 text-primary"></i><strong>Instructor:</strong> Prof. <?= htmlspecialchars($sub['prof_name']) ?>
-                                </p>
-                            </div>
 
-                            <div class="pt-3 border-top">
-                                <small class="text-muted"><i class="bi bi-envelope me-1"></i><?= htmlspecialchars($sub['prof_email'] ?? 'No email listed') ?></small>
+                                <div class="pt-3 border-top">
+                                    <small class="text-muted"><i class="bi bi-envelope me-1"></i><?= htmlspecialchars($sub['prof_email'] ?? 'No email listed') ?></small>
+                                </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
