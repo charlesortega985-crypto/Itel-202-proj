@@ -1,8 +1,6 @@
 <?php
 // config/db_connect.php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// DO NOT PUT session_start() HERE. It causes conflicts.
 
 $host     = "localhost";
 $user     = "root";

@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// FIX: Use __DIR__ . '/config/db_connect.php' (REMOVE the ../)
 $config_file = __DIR__ . '/config/db_connect.php';
 if (file_exists($config_file)) {
     include_once $config_file;
@@ -16,7 +17,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id_number = trim($_POST['id_number'] ?? '');
     $password  = $_POST['password'] ?? '';
 
-    
     if (!empty($id_number) && !empty($password)) {
         if (isset($pdo)) {
             try {
@@ -25,23 +25,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     WHERE TRIM(student_faculty_id) = ? 
                        OR TRIM(id_number) = ? 
                        OR TRIM(user_id) = ? 
+                       OR TRIM(email) = ?
                     LIMIT 1
                 ");
-                $stmt->execute([$id_number, $id_number, $id_number]);
+                $stmt->execute([$id_number, $id_number, $id_number, $id_number]);
                 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($user && password_verify($password, $user['password'])) {
                     $_SESSION['user_id']   = $user['user_id'];
                     $_SESSION['full_name'] = $user['full_name'];
-                    $_SESSION['role']      = $user['role'];
+                    $user_role = strtolower(trim($user['role'])); 
+                    $_SESSION['role']      = $user_role;
                     $_SESSION['id_number'] = $user['student_faculty_id'] ?? $user['id_number'];
 
-                    if ($user['role'] === 'faculty') {
+                    if ($user_role === 'faculty') {
                         header("Location: faculty/index.php");
-                    } else {
+                        exit;
+                    } elseif ($user_role === 'student') {
                         header("Location: student/index.php");
+                        exit;
                     }
-                    exit;
                 } else {
                     $msg = "<div class='alert alert-danger py-2 rounded-3 mb-3'><small><i class='bi bi-exclamation-triangle-fill me-1'></i> Invalid ID Number or Password!</small></div>";
                 }
@@ -60,63 +63,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Smart Attendance System</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Custom CSS Style -->
     <link rel="stylesheet" href="assets/css/style.css">
-
     <style>
-        input::-ms-reveal,
-        input::-ms-clear {
-            display: none !important;
-        }
-        .password-toggle-btn {
-            cursor: pointer;
-            user-select: none;
-            background: transparent;
-        }
-        .divider-container {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            color: #94a3b8;
-            margin: 20px 0;
-        }
-        .divider-container::before,
-        .divider-container::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid var(--border-color, #e2e8f0);
-        }
-        .divider-container span {
-            padding: 0 10px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        .btn-google {
-            background-color: #ffffff;
-            color: #1e293b;
-            border: 1px solid #cbd5e1;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-        }
-        .btn-google:hover {
-            background-color: #f8fafc;
-            border-color: #94a3b8;
-            color: #0f172a;
-        }
+        input::-ms-reveal, input::-ms-clear { display: none !important; }
+        .password-toggle-btn { cursor: pointer; user-select: none; background: transparent; }
+        .divider-container { display: flex; align-items: center; text-align: center; color: #94a3b8; margin: 20px 0; }
+        .divider-container::before, .divider-container::after { content: ''; flex: 1; border-bottom: 1px solid var(--border-color, #e2e8f0); }
+        .divider-container span { padding: 0 10px; font-size: 0.8rem; font-weight: 600; }
+        .btn-google { background-color: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background-color 0.2s ease, border-color 0.2s ease; }
+        .btn-google:hover { background-color: #f8fafc; border-color: #94a3b8; color: #0f172a; }
     </style>
 </head>
 <body class="d-flex align-items-center justify-content-center p-3" style="min-height: 100vh;">
 
 <div class="login-card w-100" style="max-width: 420px; border-radius: 20px;">
-    
     <div class="d-flex justify-content-end mb-2">
         <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-sm btn-outline-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Toggle Theme">
             <i id="themeIcon" class="bi bi-moon-stars-fill"></i>
@@ -150,6 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i id="loginEyeIcon" class="bi bi-eye"></i>
                 </button>
             </div>
+
+            <div class="text-end mt-1">
+                <a href="forgot_password.php" class="text-primary text-decoration-none small fw-bold">Forgot Password?</a>
+            </div>
         </div>
 
         <button type="submit" class="btn btn-primary w-100 fw-bold py-2 rounded-pill shadow-sm" style="background-color: #6366f1; border: none;">
@@ -157,7 +123,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </button>
     </form>
 
-    <!-- Google Button positioned at the bottom -->
     <div class="divider-container">
         <span>OR</span>
     </div>
@@ -178,7 +143,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script src="assets/js/theme.js"></script>
-
 <script>
     function toggleLoginPassword() {
         const passInput = document.getElementById('loginPasswordInput');

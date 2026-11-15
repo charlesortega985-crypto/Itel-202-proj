@@ -1,28 +1,107 @@
 <?php
-// student/profile.php
+// faculty/profile.php
 if (session_status() === PHP_SESSION_NONE) {
     @session_start();
 }
 
-// Siguraduhing student ang naka-login
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
+date_default_timezone_set('Asia/Manila');
+
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'faculty') {
     header("Location: ../login.php");
     exit;
 }
 
-$full_name = $_SESSION['full_name'] ?? 'Student User';
-$user_id   = $_SESSION['user_id'] ?? 0;
-
-$msg = $_SESSION['msg'] ?? '';
-unset($_SESSION['msg']);
-
+$user_id = $_SESSION['user_id'];
 $config_file = __DIR__ . '/../config/db_connect.php';
 if (file_exists($config_file)) {
     include_once $config_file;
 }
 
-// 1. Handle Change Password Process
+$msg = $_SESSION['msg'] ?? '';
+unset($_SESSION['msg']);
+
+// Variable to track if the edit was successful
+$update_success = false;
+
+// 1. Handle Profile Picture Upload
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profile_pic'])) {
+    // ... (Keep existing picture upload logic) ...
+    if ($_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['profile_pic']['tmp_name'];
+        $fileName    = $_FILES['profile_pic']['name'];
+        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (in_array($fileExtension, $allowedExtensions)) {
+            $newFileName = 'prof_' . $user_id . '_' . time() . '.' . $fileExtension;
+            $uploadFileDir = __DIR__ . '/../uploads/profile_pics/';
+
+            if (!is_dir($uploadFileDir)) {
+                mkdir($uploadFileDir, 0755, true);
+            }
+
+            $dest_path = $uploadFileDir . $newFileName;
+            if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                $db_pic_path = 'uploads/profile_pics/' . $newFileName;
+                
+                if (isset($pdo)) {
+                    try {
+                        $stmt_img = $pdo->prepare("UPDATE users SET profile_pic = ? WHERE user_id = ?");
+                        $stmt_img->execute([$db_pic_path, $user_id]);
+                        $_SESSION['msg'] = "<div class='alert alert-success py-2 rounded-3 mb-3'><small><i class='bi bi-check-circle-fill me-1'></i> Profile picture updated successfully!</small></div>";
+                    } catch (Exception $e) {
+                        $_SESSION['msg'] = "<div class='alert alert-danger py-2 rounded-3 mb-3'><small>Database Error: " . $e->getMessage() . "</small></div>";
+                    }
+                }
+            }
+        }
+    }
+    header("Location: profile.php");
+    exit;
+}
+
+// 2. Handle Profile Information Update (ID & Email)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    $new_id_number = trim($_POST['id_number'] ?? '');
+    $new_email     = trim($_POST['email'] ?? '');
+
+    if (!empty($new_id_number) && !empty($new_email)) {
+        if (isset($pdo)) {
+            try {
+                $stmt_chk = $pdo->prepare("SELECT user_id FROM users WHERE (student_faculty_id = ? OR id_number = ?) AND user_id != ?");
+                $stmt_chk->execute([$new_id_number, $new_id_number, $user_id]);
+
+                if ($stmt_chk->rowCount() > 0) {
+                    $msg = "<div class='alert alert-danger py-2 rounded-3 mb-3'><small><i class='bi bi-exclamation-triangle-fill me-1'></i> That ID Number is already taken!</small></div>";
+                } else {
+                    $stmt_up = $pdo->prepare("UPDATE users SET student_faculty_id = ?, id_number = ?, email = ? WHERE user_id = ?");
+                    $stmt_up->execute([$new_id_number, $new_id_number, $new_email, $user_id]);
+                    
+                    $_SESSION['msg'] = "<div class='alert alert-success py-2 rounded-3 mb-3'><small><i class='bi bi-check-circle-fill me-1'></i> Profile information updated successfully!</small></div>";
+                    
+                    // Set the flag to clear inputs
+                    $update_success = true;
+                    
+                    header("Location: profile.php?updated=1");
+                    exit;
+                }
+            } catch (Exception $e) {
+                $msg = "<div class='alert alert-danger py-2 rounded-3 mb-3'><small>Error: " . $e->getMessage() . "</small></div>";
+            }
+        }
+    } else {
+        $msg = "<div class='alert alert-warning py-2 rounded-3 mb-3'><small>Please fill in both ID Number and Email Address.</small></div>";
+    }
+}
+
+// Check if redirected after successful update
+if (isset($_GET['updated']) && $_GET['updated'] == '1') {
+    $update_success = true;
+}
+
+// 3. Handle Change Password
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
+    // ... (Keep existing change password logic) ...
     $current_pass = $_POST['current_password'] ?? '';
     $new_pass     = $_POST['new_password'] ?? '';
     $confirm_pass = $_POST['confirm_password'] ?? '';
@@ -42,9 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
                         $stmt_up_pass = $pdo->prepare("UPDATE users SET password = ? WHERE user_id = ?");
                         $stmt_up_pass->execute([$new_hashed, $user_id]);
                         
-                        $_SESSION['msg'] = "<div class='alert alert-success py-2 rounded-3 mb-3'><small><i class='bi bi-check-circle-fill me-1'></i> Password updated successfully!</small></div>";
-                        header("Location: profile.php");
-                        exit;
+                        $msg = "<div class='alert alert-success py-2 rounded-3 mb-3'><small><i class='bi bi-check-circle-fill me-1'></i> Password updated successfully!</small></div>";
                     } else {
                         $msg = "<div class='alert alert-danger py-2 rounded-3 mb-3'><small><i class='bi bi-x-circle-fill me-1'></i> Incorrect current password.</small></div>";
                     }
@@ -58,147 +135,150 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     }
 }
 
-// 2. Fetch Student Profile Info
-$user_info = null;
-if (isset($pdo) && $user_id > 0) {
+// Fetch Faculty Details
+$user_info = [];
+if (isset($pdo)) {
     try {
-        $stmt = $pdo->prepare("SELECT user_id, full_name, email, role, created_at, profile_pic, COALESCE(student_faculty_id, id_number, user_id) AS student_code FROM users WHERE user_id = ?");
+        $stmt = $pdo->prepare("SELECT full_name, id_number, email, role, created_at, profile_pic FROM users WHERE user_id = ?");
         $stmt->execute([$user_id]);
         $user_info = $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
-        $user_info = null;
+        $user_info = [];
     }
 }
 
-$id_number   = $user_info['student_code'] ?? ($_SESSION['id_number'] ?? '2026-0000');
-$email       = !empty($user_info['email']) ? $user_info['email'] : 'Not provided';
+$full_name   = $user_info['full_name'] ?? ($_SESSION['full_name'] ?? 'Faculty User');
+$id_number   = $user_info['id_number'] ?? 'N/A';
+$email       = $user_info['email'] ?? 'N/A';
 $created_at  = !empty($user_info['created_at']) ? date('F d, Y', strtotime($user_info['created_at'])) : 'N/A';
-$profile_pic = $user_info['profile_pic'] ?? null;
+$profile_pic = $user_info['profile_pic'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Profile - Smart Attendance System</title>
-    <!-- Bootstrap CSS -->
+    <title>Faculty Profile - Smart Attendance System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Custom CSS Style -->
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
 
 <div class="container py-4">
     
-    <!-- Header Banner -->
     <div class="main-header text-center mb-4">
         <h2 class="fw-bold m-0 d-flex align-items-center justify-content-center gap-2">
             <i class="bi bi-mortarboard-fill text-primary"></i> Smart Attendance System
         </h2>
-        <p class="text-muted mb-0 mt-1">Student Account Profile & Details</p>
+        <p class="text-muted mb-0 mt-1">Faculty Account Profile & Account Settings</p>
     </div>
 
-    <!-- Navigation Bar -->
     <div class="nav-pill-custom d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 px-3">
         <div class="d-flex gap-2 flex-wrap">
             <a href="index.php" class="nav-link-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
-            <a href="subjects.php" class="nav-link-item"><i class="bi bi-journal-bookmark"></i> Subjects</a>
-            <a href="history.php" class="nav-link-item"><i class="bi bi-clock-history"></i> History</a>
+            <a href="subjects.php" class="nav-link-item"><i class="bi bi-journal-bookmark"></i> Manage Subjects</a>
+            <a href="calendar.php" class="nav-link-item"><i class="bi bi-calendar3"></i> Calendar</a>
             <a href="profile.php" class="nav-link-item active"><i class="bi bi-person-badge"></i> Profile</a>
         </div>
 
-        <!-- Real-Time Clock Display -->
-        <div class="text-center px-3 py-1 rounded shadow-sm border inner-box d-none d-lg-block">
-            <span id="liveClock" class="fw-bold text-primary small">--:--:-- --</span>
-            <span class="text-muted small mx-1">|</span>
-            <span id="liveDate" class="text-muted small">Loading date...</span>
-        </div>
-
-        <!-- Theme Toggle & Profile Info -->
         <div class="d-flex align-items-center gap-2">
-            <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-sm btn-outline-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Toggle Theme">
+            <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-sm btn-outline-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
                 <i id="themeIcon" class="bi bi-moon-stars-fill"></i>
             </button>
-            <span class="fw-bold me-2 ms-2 text-secondary d-none d-md-inline"><i class="bi bi-person-circle"></i> <?= htmlspecialchars($full_name) ?></span>
+            <span class="fw-bold me-2 ms-2 text-secondary d-none d-md-inline"><i class="bi bi-person-circle"></i> Prof. <?= htmlspecialchars($full_name) ?></span>
             <a href="../logout.php" class="btn btn-outline-danger btn-sm rounded-pill fw-bold"><i class="bi bi-box-arrow-right"></i> Logout</a>
         </div>
     </div>
 
-    <!-- Content Panel -->
-    <div class="content-card">
-        
-        <?= $msg ?>
+    <div class="row g-4 justify-content-center">
+        <div class="col-lg-8">
+            <div class="content-card">
+                <?= $msg ?>
 
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                
-                <!-- Profile Avatar Card -->
                 <div class="text-center mb-4">
                     <div class="position-relative d-inline-block mb-3">
-                        <?php if ($profile_pic && file_exists(__DIR__ . '/../uploads/' . $profile_pic)): ?>
-                            <img src="../uploads/<?= htmlspecialchars($profile_pic) ?>" alt="Profile Picture" class="profile-img-large shadow">
+                        <?php if (!empty($profile_pic) && file_exists(__DIR__ . '/../' . $profile_pic)): ?>
+                            <img src="../<?= htmlspecialchars($profile_pic) ?>" class="profile-img-header" alt="Profile Picture" style="width: 110px; height: 110px;">
                         <?php else: ?>
-                            <div class="profile-icon-fallback-large shadow"><i class="bi bi-person-fill"></i></div>
+                            <div class="profile-icon-fallback d-flex align-items-center justify-content-center bg-primary text-white rounded-circle shadow-sm" style="width: 110px; height: 110px; font-size: 3.5rem;">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
                         <?php endif; ?>
-                        
-                        <label for="profile_upload" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 shadow" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;" title="Upload Picture">
-                            <i class="bi bi-camera-fill"></i>
-                        </label>
+
+                        <form id="picForm" method="POST" enctype="multipart/form-data" class="position-absolute bottom-0 end-0">
+                            <label for="profile_pic" class="btn btn-primary btn-sm rounded-circle p-2 shadow-sm cursor-pointer d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; border: 2px solid #fff;" title="Upload Photo">
+                                <i class="bi bi-camera-fill" style="font-size: 0.85rem;"></i>
+                            </label>
+                            <input type="file" id="profile_pic" name="profile_pic" class="d-none" accept="image/*" onchange="document.getElementById('picForm').submit();">
+                        </form>
                     </div>
 
-                    <!-- Hidden Profile Form -->
-                    <form id="uploadForm" action="upload_profile.php" method="POST" enctype="multipart/form-data" class="d-none">
-                        <input type="file" id="profile_upload" name="profile_pic" accept="image/*" onchange="document.getElementById('uploadForm').submit();">
-                    </form>
-
-                    <h3 class="fw-bold text-body mb-2"><?= htmlspecialchars($full_name) ?></h3>
-                    <span class="badge bg-primary px-3 py-1 rounded-pill mt-1">
-                        <i class="bi bi-shield-check me-1"></i> Student Account
-                    </span>
+                    <h3 class="fw-bold text-body mb-3">Prof. <?= htmlspecialchars($full_name) ?></h3>
+                    <span class="badge bg-primary px-3 py-2 rounded-pill small"><i class="bi bi-award-fill me-1"></i> Faculty Instructor</span>
                 </div>
 
-                <!-- Account Information Grid -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
-                        <div class="p-3 rounded-4 inner-box">
-                            <small class="text-muted fw-bold d-block mb-1 text-uppercase">Student ID Number</small>
-                            <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
+                        <div class="p-3 rounded-4 inner-box h-100">
+                            <small class="text-muted fw-bold text-uppercase" style="font-size: 0.75rem;">FACULTY ID NUMBER</small>
+                            <div class="fw-bold text-body mt-1 d-flex align-items-center gap-2">
                                 <i class="bi bi-card-heading text-primary"></i> <?= htmlspecialchars($id_number) ?>
-                            </h6>
+                            </div>
                         </div>
                     </div>
 
                     <div class="col-md-6">
-                        <div class="p-3 rounded-4 inner-box">
-                            <small class="text-muted fw-bold d-block mb-1 text-uppercase">Email Address</small>
-                            <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
-                                <i class="bi bi-envelope text-primary"></i> <?= htmlspecialchars($email) ?>
-                            </h6>
+                        <div class="p-3 rounded-4 inner-box h-100">
+                            <small class="text-muted fw-bold text-uppercase" style="font-size: 0.75rem;">EMAIL ADDRESS</small>
+                            <div class="fw-bold text-body mt-1 d-flex align-items-center gap-2">
+                                <i class="bi bi-envelope-fill text-primary"></i> <?= htmlspecialchars($email) ?>
+                            </div>
                         </div>
                     </div>
 
                     <div class="col-md-6">
-                        <div class="p-3 rounded-4 inner-box">
-                            <small class="text-muted fw-bold d-block mb-1 text-uppercase">User Role</small>
-                            <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
-                                <i class="bi bi-person-badge text-primary"></i> Student
-                            </h6>
+                        <div class="p-3 rounded-4 inner-box h-100">
+                            <small class="text-muted fw-bold text-uppercase" style="font-size: 0.75rem;">USER ROLE</small>
+                            <div class="fw-bold text-body mt-1 d-flex align-items-center gap-2">
+                                <i class="bi bi-person-badge-fill text-primary"></i> Faculty Account
+                            </div>
                         </div>
                     </div>
 
                     <div class="col-md-6">
-                        <div class="p-3 rounded-4 inner-box">
-                            <small class="text-muted fw-bold d-block mb-1 text-uppercase">Registration Date</small>
-                            <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
-                                <i class="bi bi-calendar-check text-primary"></i> <?= htmlspecialchars($created_at) ?>
-                            </h6>
+                        <div class="p-3 rounded-4 inner-box h-100">
+                            <small class="text-muted fw-bold text-uppercase" style="font-size: 0.75rem;">ACCOUNT CREATED</small>
+                            <div class="fw-bold text-body mt-1 d-flex align-items-center gap-2">
+                                <i class="bi bi-calendar-check-fill text-primary"></i> <?= htmlspecialchars($created_at) ?>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Change Password Form Section -->
+                <!-- Update Profile Info Section -->
+                <div class="p-4 rounded-4 inner-box mb-4">
+                    <h5 class="fw-bold text-body mb-3"><i class="bi bi-pencil-square text-primary me-2"></i>Update Account Information</h5>
+                    <form method="POST">
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-body">Faculty ID Number</label>
+                                <!-- Logic: If update was successful, clear the value -->
+                                <input type="text" name="id_number" class="form-control inner-box text-body" value="<?= $update_success ? '' : htmlspecialchars($id_number) ?>" required placeholder="Enter new ID Number">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-body">Email Address</label>
+                                <!-- Logic: If update was successful, clear the value -->
+                                <input type="email" name="email" class="form-control inner-box text-body" value="<?= $update_success ? '' : htmlspecialchars($email) ?>" required placeholder="Enter new Email">
+                            </div>
+                        </div>
+                        <button type="submit" name="update_profile" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" style="background-color: #6366f1; border: none;">
+                            <i class="bi bi-save me-1"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Change Password Section -->
                 <div class="p-4 rounded-4 inner-box mb-4">
                     <h5 class="fw-bold text-body mb-3"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Change Security Password</h5>
                     <form method="POST">
@@ -216,4 +296,24 @@ $profile_pic = $user_info['profile_pic'] ?? null;
                                 <input type="password" name="confirm_password" class="form-control inner-box text-body" required placeholder="••••••••">
                             </div>
                         </div>
-                        <button type="submit" name="change_password"
+                        <button type="submit" name="change_password" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" style="background-color: #6366f1; border: none;">
+                            <i class="bi bi-key-fill me-1"></i> Update Password
+                        </button>
+                    </form>
+                </div>
+
+                <div class="text-center pt-2">
+                    <a href="index.php" class="btn btn-outline-primary px-4 py-2 rounded-pill fw-bold">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../assets/js/theme.js"></script>
+
+</body>
+</html>
