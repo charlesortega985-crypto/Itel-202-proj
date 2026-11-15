@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 date_default_timezone_set('Asia/Manila');
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'faculty') {
-    return; // Do nothing if not logged in as faculty
+    return; 
 }
 
 $user_id = $_SESSION['user_id'];
@@ -63,13 +63,12 @@ if (isset($pdo)) {
                         INSERT INTO attendance (subject_id, student_id, status, scanned_at) 
                         VALUES (?, ?, 'Absent', ?)
                     ");
-                    // We set the time as the class end time to simulate when the scan should have been missed
                     $stmt_insert->execute([$subject_id, $student_id, $today . ' ' . $class_end_time]);
                 }
             }
         }
     } catch (Exception $e) {
-        // Silently fail so it doesn't break the UI
+        // DO NOTHING. If it fails, just let the page load normally.
     }
 }
 ?>

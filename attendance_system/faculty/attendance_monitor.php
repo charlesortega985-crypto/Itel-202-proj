@@ -36,6 +36,23 @@ if (!$subject_info) {
     exit;
 }
 
+// Fetch ALL subjects handled by this faculty for the dropdown
+$faculty_subjects = [];
+if (isset($pdo)) {
+    try {
+        $stmt_sub = $pdo->prepare("
+            SELECT subject_id, subject_code, subject_title 
+            FROM subjects 
+            WHERE faculty_id = ? 
+            ORDER BY subject_code ASC
+        ");
+        $stmt_sub->execute([$user_id]);
+        $faculty_subjects = $stmt_sub->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $faculty_subjects = [];
+    }
+}
+
 // 1. FETCH ALL ENROLLED STUDENTS & THEIR LATEST TODAY ATTENDANCE
 $enrolled_students = [];
 if (isset($pdo)) {
@@ -205,11 +222,83 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
     <div class="content-card">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <h5 class="fw-bold m-0"><i class="bi bi-person-lines-fill text-primary me-2"></i>Enrolled Students Real-Time Status</h5>
-            <div class="d-flex gap-2">
+            
+            <!-- ACTION BUTTONS -->
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                
+                <!-- 1. QR SCANNER BUTTON -->
                 <a href="scanner.php?subject_id=<?= $subject_id ?>" class="btn btn-success btn-sm rounded-pill px-3 fw-bold">
                     <i class="bi bi-qr-code-scan me-1"></i> Open QR Scanner
                 </a>
+
+                <!-- 2. SUBJECT DROPDOWN (NEW) -->
+                <select class="form-select form-select-sm inner-box text-body fw-bold" 
+                        style="width: auto; min-width: 200px; border-radius: 20px;" 
+                        onchange="if(this.value) window.location.href='attendance_monitor.php?id=' + this.value;">
+                    <?php foreach ($faculty_subjects as $sub): ?>
+                        <option value="<?= $sub['subject_id'] ?>" <?= $subject_id == $sub['subject_id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($sub['subject_code']) ?> - <?= htmlspecialchars($sub['subject_title']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <!-- 3. REFRESH BUTTON -->
                 <button onclick="location.reload();" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
                     <i class="bi bi-arrow-clockwise me-1"></i> Refresh
                 </button>
-            </div
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-body">#</th>
+                        <th class="text-body">Student Name</th>
+                        <th class="text-body">Student ID</th>
+                        <th class="text-body text-center">Today's Status</th>
+                        <th class="text-body text-center">Time Scanned</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (count($enrolled_students) > 0): ?>
+                        <?php $n = 1; foreach ($enrolled_students as $st): ?>
+                            <tr>
+                                <td class="text-body small"><?= $n++ ?></td>
+                                <td class="fw-bold text-body"><?= htmlspecialchars($st['full_name']) ?></td>
+                                <td><span class="badge bg-secondary font-monospace px-2 py-1"><?= htmlspecialchars($st['id_number']) ?></span></td>
+                                <td class="text-center">
+                                    <?php if ($st['today_status'] === 'Present'): ?>
+                                        <span class="badge bg-success px-3 py-1 rounded-pill"><i class="bi bi-check-circle me-1"></i> Present</span>
+                                    <?php elseif ($st['today_status'] === 'Late'): ?>
+                                        <span class="badge bg-warning text-dark px-3 py-1 rounded-pill"><i class="bi bi-clock-history me-1"></i> Late</span>
+                                    <?php elseif ($st['today_status'] === 'Absent'): ?>
+                                        <span class="badge bg-danger px-3 py-1 rounded-pill"><i class="bi bi-x-circle me-1"></i> Absent</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary bg-opacity-50 text-light px-3 py-1 rounded-pill"><i class="bi bi-dash-circle me-1"></i> Not Scanned Yet</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-dark bg-opacity-75 text-light border border-secondary font-monospace px-3 py-1 fw-normal">
+                                        <?= $st['scanned_time'] ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">No enrolled students yet.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Theme JS -->
+<script src="../assets/js/theme.js"></script>
+
+</body>
+</html>

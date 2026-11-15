@@ -70,6 +70,18 @@ if (isset($pdo)) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Custom CSS Style -->
     <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        /* Make the subject card look clickable */
+        .subject-card-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s ease-in-out;
+        }
+        .subject-card-link:hover {
+            transform: translateY(-3px);
+        }
+    </style>
 </head>
 <body>
 
@@ -142,7 +154,9 @@ if (isset($pdo)) {
                 <?php foreach ($faculty_subjects as $sub): ?>
                     <div class="col-md-6">
                         <div class="p-4 rounded-4 inner-box border h-100 d-flex flex-column justify-content-between">
-                            <div>
+                            
+                            <!-- CLICKABLE AREA STARTS HERE -->
+                            <a href="attendance_monitor.php?id=<?= $sub['subject_id'] ?>" class="subject-card-link">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="badge bg-primary px-3 py-2 fs-6"><?= htmlspecialchars($sub['subject_code']) ?></span>
                                     <span class="badge bg-dark bg-opacity-75 text-light border border-secondary font-monospace px-3 py-1">
@@ -157,7 +171,8 @@ if (isset($pdo)) {
                                     <i class="bi bi-people-fill me-1 text-primary"></i> Enrolled: <strong><?= $sub['enrolled_count'] ?> Student(s)</strong> | 
                                     Join Code: <span class="badge bg-secondary font-monospace"><?= htmlspecialchars($sub['join_code']) ?></span>
                                 </p>
-                            </div>
+                            </a>
+                            <!-- CLICKABLE AREA ENDS HERE -->
 
                             <div class="d-flex gap-2 pt-3 border-top flex-wrap">
                                 <a href="scanner.php?subject_id=<?= $sub['subject_id'] ?>" class="btn btn-success btn-action-solid btn-sm rounded-pill px-2 py-1 fw-bold">
