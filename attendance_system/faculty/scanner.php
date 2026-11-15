@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['qr_code'])) {
         $today = date('Y-m-d');
         $current_datetime = date('Y-m-d H:i:s');
 
-        // --- COMPUTATION GAMIT ANG START AT END TIME ---
+                // --- COMPUTATION GAMIT ANG START AT END TIME ---
         $status = 'Present';
         
         if (!empty($subject_info['class_time']) && !empty($subject_info['class_end_time'])) {
@@ -63,17 +63,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['qr_code'])) {
             $class_end   = strtotime($today . ' ' . $subject_info['class_end_time']);
             $now         = time();
 
-            // 1. Kung nag-scan bago ang Start Time o pagkatapos ng End Time -> ABSENT
-            if ($now < $class_start || $now >= $class_end) {
-                $status = 'Absent';
-            }
-            // 2. Kung nag-scan sa loob ng unang 15 minutes mula sa Start Time -> PRESENT
-            elseif ($now <= ($class_start + (15 * 60))) {
-                $status = 'Present';
-            }
-            // 3. Kung nag-scan lagpas ng 15 mins hanggang bago mag End Time -> LATE
-            else {
-                $status = 'Late';
+            if ($now < $class_start) {
+                $status = 'Absent'; // Too early
+            } elseif ($now >= $class_end) {
+                $status = 'Absent'; // Too late
+            } elseif ($now <= ($class_start + (15 * 60))) {
+                $status = 'Present'; // On time (first 15 mins)
+            } else {
+                $status = 'Late'; // After 15 mins
             }
         }
 

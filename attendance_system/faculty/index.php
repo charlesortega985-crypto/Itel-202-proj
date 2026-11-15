@@ -19,6 +19,9 @@ if (file_exists($config_file)) {
     include_once $config_file;
 }
 
+// --- AUTO ABSENT CHECK ---
+require_once 'auto_absent.php';
+
 // Fetch Faculty Subjects with Enrolled Count
 $faculty_subjects = [];
 if (isset($pdo)) {

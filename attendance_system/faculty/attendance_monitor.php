@@ -20,6 +20,9 @@ if (file_exists($config_file)) {
     include_once $config_file;
 }
 
+// --- AUTO ABSENT CHECK ---
+require_once 'auto_absent.php';
+
 // Fetch Subject Details
 $subject_info = null;
 if (isset($pdo) && $subject_id > 0) {
@@ -80,7 +83,6 @@ foreach ($enrolled_students as &$st) {
     $st['scanned_time'] = '--:--:--';
 
     foreach ($today_logs as $log) {
-        // I-check kung nag-ma-match sa user_id O sa id_number (student_faculty_id)
         if ($log['student_id'] == $st['user_id'] || trim($log['student_id']) === trim($st['id_number'])) {
             $st['today_status'] = $log['status'];
             $st['scanned_time'] = date('h:i:s A', strtotime($log['scanned_at']));
@@ -107,7 +109,6 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../assets/css/style.css">
-    
 </head>
 <body>
 
@@ -120,7 +121,7 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
         <p class="text-muted mb-0 mt-1"><?= htmlspecialchars($subject_info['subject_code']) ?> - <?= htmlspecialchars($subject_info['subject_title']) ?> (Sched: <?= !empty($subject_info['class_time']) ? date('h:i A', strtotime($subject_info['class_time'])) : 'N/A' ?> - <?= !empty($subject_info['class_end_time']) ? date('h:i A', strtotime($subject_info['class_end_time'])) : 'N/A' ?>)</p>
     </div>
 
-    <!-- Navigation Bar (UPDATED: Added Profile) -->
+    <!-- Navigation Bar -->
     <div class="nav-pill-custom d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 px-3">
         <div class="d-flex gap-2 flex-wrap">
             <a href="index.php" class="nav-link-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
@@ -211,58 +212,4 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
                 <button onclick="location.reload();" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
                     <i class="bi bi-arrow-clockwise me-1"></i> Refresh
                 </button>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table align-middle table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th class="text-body">#</th>
-                        <th class="text-body">Student Name</th>
-                        <th class="text-body">Student ID</th>
-                        <th class="text-body text-center">Today's Status</th>
-                        <th class="text-body text-center">Time Scanned</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (count($enrolled_students) > 0): ?>
-                        <?php $n = 1; foreach ($enrolled_students as $st): ?>
-                            <tr>
-                                <td class="text-body small"><?= $n++ ?></td>
-                                <td class="fw-bold text-body"><?= htmlspecialchars($st['full_name']) ?></td>
-                                <td><span class="badge bg-secondary font-monospace px-2 py-1"><?= htmlspecialchars($st['id_number']) ?></span></td>
-                                <td class="text-center">
-                                    <?php if ($st['today_status'] === 'Present'): ?>
-                                        <span class="badge bg-success px-3 py-1 rounded-pill"><i class="bi bi-check-circle me-1"></i> Present</span>
-                                    <?php elseif ($st['today_status'] === 'Late'): ?>
-                                        <span class="badge bg-warning text-dark px-3 py-1 rounded-pill"><i class="bi bi-clock-history me-1"></i> Late</span>
-                                    <?php elseif ($st['today_status'] === 'Absent'): ?>
-                                        <span class="badge bg-danger px-3 py-1 rounded-pill"><i class="bi bi-x-circle me-1"></i> Absent</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-secondary bg-opacity-50 text-light px-3 py-1 rounded-pill"><i class="bi bi-dash-circle me-1"></i> Not Scanned Yet</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge bg-dark bg-opacity-75 text-light border border-secondary font-monospace px-3 py-1 fw-normal">
-                                        <?= $st['scanned_time'] ?>
-                                    </span>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">No enrolled students yet.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-</div>
-
-<script src="../assets/js/theme.js"></script>
-
-</body>
-</html>
+            </div

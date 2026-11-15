@@ -19,6 +19,9 @@ if (file_exists($config_file)) {
     include_once $config_file;
 }
 
+// --- AUTO ABSENT CHECK ---
+require_once 'auto_absent.php';
+
 // 1. Fetch all subjects handled by this faculty
 $subjects = [];
 if (isset($pdo) && $user_id > 0) {
@@ -36,10 +39,10 @@ if (isset($pdo) && $user_id > 0) {
     }
 }
 
-// 2. Get selected subject (default to first subject if available)
+// 2. Get selected subject
 $selected_subject_id = $_GET['subject_id'] ?? ($subjects[0]['subject_id'] ?? 0);
 
-// 3. Fetch enrolled students if a subject is selected
+// 3. Fetch enrolled students
 $students = [];
 if ($selected_subject_id > 0 && isset($pdo)) {
     try {
@@ -57,14 +60,14 @@ if ($selected_subject_id > 0 && isset($pdo)) {
     }
 }
 
-// 4. Get selected student (default to first student in the list)
+// 4. Get selected student
 $selected_student_id = $_GET['student_id'] ?? ($students[0]['user_id'] ?? 0);
 
-// 5. Determine Month and Year for Calendar (default to current month)
+// 5. Determine Month and Year
 $month = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('m');
 $year  = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 
-// 6. Fetch attendance records for selected student, subject, and month
+// 6. Fetch attendance records
 $attendance_records = [];
 $total_present = 0;
 $total_late = 0;
@@ -81,7 +84,6 @@ if ($selected_student_id > 0 && $selected_subject_id > 0 && isset($pdo)) {
         $stmt_att->execute([$selected_student_id, $selected_subject_id, $month, $year]);
         $records = $stmt_att->fetchAll(PDO::FETCH_ASSOC);
         
-        // Map records by day and count the totals
         foreach ($records as $rec) {
             $attendance_records[$rec['day']] = $rec['status'];
             
@@ -97,7 +99,7 @@ if ($selected_student_id > 0 && $selected_subject_id > 0 && isset($pdo)) {
 // Calendar Setup
 $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
 $first_day_of_month = strtotime("$year-$month-01");
-$first_day_of_week = date('w', $first_day_of_month); // 0 (Sunday) to 6 (Saturday)
+$first_day_of_week = date('w', $first_day_of_month); 
 
 $month_name = date('F Y', $first_day_of_month);
 $prev_month = $month == 1 ? 12 : $month - 1;
@@ -111,11 +113,8 @@ $next_year  = $month == 12 ? $year + 1 : $year;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Attendance Calendar - Faculty Portal</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Custom CSS Style -->
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
@@ -167,7 +166,6 @@ $next_year  = $month == 12 ? $year + 1 : $year;
                             <option value="0">No subjects created yet</option>
                         <?php endif; ?>
                     </select>
-                    <!-- Retain month/year and student selection -->
                     <input type="hidden" name="student_id" value="<?= $selected_student_id ?>">
                     <input type="hidden" name="month" value="<?= $month ?>">
                     <input type="hidden" name="year" value="<?= $year ?>">
@@ -194,7 +192,6 @@ $next_year  = $month == 12 ? $year + 1 : $year;
                         <input type="hidden" name="year" value="<?= $year ?>">
                     </form>
 
-                    <!-- ATTENDANCE COUNTERS WITH LIGHTER BACKGROUNDS -->
                     <div class="d-flex gap-2 mt-2 mt-md-0">
                         <span class="badge badge-present px-3 py-2 rounded-3 shadow-sm">
                             <i class="bi bi-check-circle-fill me-1"></i> <?= $total_present ?> Present
@@ -243,7 +240,6 @@ $next_year  = $month == 12 ? $year + 1 : $year;
                 <tbody>
                     <tr>
                         <?php
-                        // Fill empty cells before the 1st day of the month
                         for ($i = 0; $i < $first_day_of_week; $i++) {
                             echo "<td class='calendar-empty'></td>";
                         }
@@ -281,7 +277,6 @@ $next_year  = $month == 12 ? $year + 1 : $year;
                             $cell_count++;
                         }
 
-                        // Fill empty cells after the last day
                         while ($cell_count < 7) {
                             echo "<td class='calendar-empty'></td>";
                             $cell_count++;
