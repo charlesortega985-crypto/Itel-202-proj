@@ -4,9 +4,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// ⚠️ Palitan ng Client ID mula sa Google Cloud Console
-$client_id    = "370645663438-2r5f7hobqfe3p0epmmlpdd3qttphc963.apps.googleusercontent.com";
-$redirect_uri = "http://localhost/attendance/google_callback.php";
+$client_id = "370645663438-2r5f7hobqfe3p0epmmlpdd3qttphc963.apps.googleusercontent.com";
+
+// Dynamic Redirect URI (awtomatikong kinukuha ang tamang folder sa localhost)
+$protocol     = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+$folder       = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+$redirect_uri = $protocol . "://" . $_SERVER['HTTP_HOST'] . $folder . "/google_callback.php";
 
 $params = [
     'client_id'     => $client_id,

@@ -4,15 +4,18 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$config_file = __DIR__ . '/config/db_connect.php';
+$config_file = _DIR_ . '/config/db_connect.php';
 if (file_exists($config_file)) {
     include_once $config_file;
 }
 
-// ⚠️ Palitan ng Client ID at Client Secret mula sa Google Cloud Console
 $client_id     = "370645663438-2r5f7hobqfe3p0epmmlpdd3qttphc963.apps.googleusercontent.com";
-$client_secret = "GOCSPX-1234567890abcdef1234567890abcd";
-$redirect_uri  = "http://localhost/attendance/google_callback.php";
+$client_secret = "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"; // 
+
+// Dynamic Redirect URI (eksaktong kapareho ng sa google_auth.php)
+$protocol     = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+$folder       = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+$redirect_uri = $protocol . "://" . $_SERVER['HTTP_HOST'] . $folder . "/google_callback.php";
 
 if (!isset($_GET['code'])) {
     header("Location: login.php");
@@ -41,7 +44,7 @@ curl_close($ch);
 $token_data = json_decode($response, true);
 
 if (!isset($token_data['access_token'])) {
-    $_SESSION['msg'] = "<div class='alert alert-danger py-2'><small>Google Auth Failed. Please try again.</small></div>";
+    $_SESSION['msg'] = "<div class='alert alert-danger py-2'><small>Google Auth Failed. Please check your Client Secret or Redirect URI.</small></div>";
     header("Location: login.php");
     exit;
 }

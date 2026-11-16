@@ -12,7 +12,7 @@ if (!isset($_SESSION['google_reg'])) {
 $google_email = $_SESSION['google_reg']['email'];
 $google_name  = $_SESSION['google_reg']['full_name'];
 
-$config_file = __DIR__ . '/config/db_connect.php';
+$config_file = _DIR_ . '/config/db_connect.php';
 if (file_exists($config_file)) {
     include_once $config_file;
 }
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     exit;
                 }
             } catch (Exception $e) {
-                $msg = "<div class='alert alert-danger py-2'><small>Error: " . $e->getMessage() . "</small></div>";
+                $msg = "<div class='alert alert-danger py-2'><small>Error: " . htmlspecialchars($e->getMessage()) . "</small></div>";
             }
         }
     } else {

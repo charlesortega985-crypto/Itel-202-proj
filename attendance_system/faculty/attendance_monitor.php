@@ -13,7 +13,20 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'faculty') {
 
 $full_name  = $_SESSION['full_name'] ?? 'Faculty User';
 $user_id    = $_SESSION['user_id'];
-$subject_id = $_GET['id'] ?? 0;
+
+// 1. STRICT ID CHECK
+$subject_id = 0;
+if (isset($_GET['id']) && $_GET['id'] > 0) {
+    $subject_id = (int)$_GET['id'];
+} elseif (isset($_GET['subject_id']) && $_GET['subject_id'] > 0) {
+    $subject_id = (int)$_GET['subject_id'];
+}
+
+// 2. REDIRECT IF NO ID IS FOUND
+if ($subject_id === 0) {
+    header("Location: index.php");
+    exit;
+}
 
 $config_file = __DIR__ . '/../config/db_connect.php';
 if (file_exists($config_file)) {
@@ -23,7 +36,7 @@ if (file_exists($config_file)) {
 // --- AUTO ABSENT CHECK ---
 require_once 'auto_absent.php';
 
-// Fetch Subject Details
+// 3. FETCH SUBJECT DETAILS SECURELY
 $subject_info = null;
 if (isset($pdo) && $subject_id > 0) {
     $stmt = $pdo->prepare("SELECT * FROM subjects WHERE subject_id = ? AND faculty_id = ?");
@@ -31,12 +44,13 @@ if (isset($pdo) && $subject_id > 0) {
     $subject_info = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
+// 4. IF SUBJECT DOESN'T EXIST OR DOESN'T BELONG TO THIS FACULTY, REDIRECT
 if (!$subject_info) {
     header("Location: index.php");
     exit;
 }
 
-// Fetch ALL subjects handled by this faculty for the dropdown
+// 5. FETCH ALL SUBJECTS FOR THE DROPDOWN
 $faculty_subjects = [];
 if (isset($pdo)) {
     try {
@@ -53,7 +67,7 @@ if (isset($pdo)) {
     }
 }
 
-// 1. FETCH ALL ENROLLED STUDENTS & THEIR LATEST TODAY ATTENDANCE
+// 6. FETCH ALL ENROLLED STUDENTS & THEIR LATEST TODAY ATTENDANCE
 $enrolled_students = [];
 if (isset($pdo)) {
     try {
@@ -72,7 +86,7 @@ if (isset($pdo)) {
     }
 }
 
-// 2. FETCH ALL TODAY LOGS FOR THIS SUBJECT
+// 7. FETCH ALL TODAY LOGS FOR THIS SUBJECT
 $today_date = date('Y-m-d');
 $today_logs = [];
 if (isset($pdo)) {
@@ -90,7 +104,7 @@ if (isset($pdo)) {
     }
 }
 
-// 3. MAP ATTENDANCE STATUS TO EACH ENROLLED STUDENT
+// 8. MAP ATTENDANCE STATUS TO EACH ENROLLED STUDENT
 $count_present = 0;
 $count_late    = 0;
 $count_absent  = 0;
@@ -226,21 +240,27 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
             <!-- ACTION BUTTONS -->
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 
-                <!-- 1. QR SCANNER BUTTON -->
+                <!-- 1. SUBJECT SWITCHER DROPDOWN -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold dropdown-toggle" type="button" id="subjectDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-arrow-left-right me-1"></i> Switch Subject
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end inner-box text-body" aria-labelledby="subjectDropdown">
+                        <?php foreach ($faculty_subjects as $sub): ?>
+                            <li>
+                                <a class="dropdown-item fw-bold <?= ($subject_id == $sub['subject_id']) ? 'active' : '' ?>" 
+                                   href="attendance_monitor.php?id=<?= $sub['subject_id'] ?>">
+                                    <?= htmlspecialchars($sub['subject_code']) ?> - <?= htmlspecialchars($sub['subject_title']) ?>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+
+                <!-- 2. QR SCANNER BUTTON -->
                 <a href="scanner.php?subject_id=<?= $subject_id ?>" class="btn btn-success btn-sm rounded-pill px-3 fw-bold">
                     <i class="bi bi-qr-code-scan me-1"></i> Open QR Scanner
                 </a>
-
-                <!-- 2. SUBJECT DROPDOWN (NEW) -->
-                <select class="form-select form-select-sm inner-box text-body fw-bold" 
-                        style="width: auto; min-width: 200px; border-radius: 20px;" 
-                        onchange="if(this.value) window.location.href='attendance_monitor.php?id=' + this.value;">
-                    <?php foreach ($faculty_subjects as $sub): ?>
-                        <option value="<?= $sub['subject_id'] ?>" <?= $subject_id == $sub['subject_id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($sub['subject_code']) ?> - <?= htmlspecialchars($sub['subject_title']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
 
                 <!-- 3. REFRESH BUTTON -->
                 <button onclick="location.reload();" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
@@ -299,6 +319,8 @@ $scanned_percentage = ($total_enrolled > 0) ? round(($total_scanned / $total_enr
 
 <!-- Theme JS -->
 <script src="../assets/js/theme.js"></script>
+<!-- Bootstrap JS for the dropdown -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

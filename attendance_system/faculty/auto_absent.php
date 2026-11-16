@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'faculty') {
     return; 
 }
 
-$user_id = $_SESSION['user_id'];
+$abs_user_id = $_SESSION['user_id'];
 $today = date('Y-m-d');
 $current_time = date('H:i:s');
 
@@ -27,13 +27,14 @@ if (isset($pdo)) {
             FROM subjects 
             WHERE faculty_id = ? AND class_end_time < ?
         ");
-        $stmt_subjects->execute([$user_id, $current_time]);
+        $stmt_subjects->execute([$abs_user_id, $current_time]);
         $ended_subjects = $stmt_subjects->fetchAll(PDO::FETCH_ASSOC);
 
         // 2. Loop through each ended subject
         foreach ($ended_subjects as $sub) {
-            $subject_id = $sub['subject_id'];
-            $class_end_time = $sub['class_end_time'];
+            // RENAMED VARIABLES TO PREVENT COLLISION
+            $abs_subject_id = $sub['subject_id'];
+            $abs_end_time = $sub['class_end_time'];
 
             // 3. Find all students enrolled
             $stmt_students = $pdo->prepare("
@@ -42,7 +43,7 @@ if (isset($pdo)) {
                 JOIN users u ON ss.student_id = u.user_id
                 WHERE ss.subject_id = ?
             ");
-            $stmt_students->execute([$subject_id]);
+            $stmt_students->execute([$abs_subject_id]);
             $students = $stmt_students->fetchAll(PDO::FETCH_ASSOC);
 
             // 4. Check if they have a record for today
@@ -54,7 +55,7 @@ if (isset($pdo)) {
                     FROM attendance 
                     WHERE subject_id = ? AND student_id = ? AND DATE(scanned_at) = ?
                 ");
-                $stmt_check->execute([$subject_id, $student_id, $today]);
+                $stmt_check->execute([$abs_subject_id, $student_id, $today]);
                 $existing = $stmt_check->fetch(PDO::FETCH_ASSOC);
 
                 // 5. If no record, insert "Absent"
@@ -63,7 +64,7 @@ if (isset($pdo)) {
                         INSERT INTO attendance (subject_id, student_id, status, scanned_at) 
                         VALUES (?, ?, 'Absent', ?)
                     ");
-                    $stmt_insert->execute([$subject_id, $student_id, $today . ' ' . $class_end_time]);
+                    $stmt_insert->execute([$abs_subject_id, $student_id, $today . ' ' . $abs_end_time]);
                 }
             }
         }
