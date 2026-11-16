@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$config_file = _DIR_ . '/config/db_connect.php';
+$config_file = 'config/db_connect.php';
 if (file_exists($config_file)) {
     include_once $config_file;
 }

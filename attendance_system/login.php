@@ -1,10 +1,9 @@
 <?php
-// login.php
+// index.php / login.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// FIX: Use __DIR__ . '/config/db_connect.php' (REMOVE the ../)
 $config_file = __DIR__ . '/config/db_connect.php';
 if (file_exists($config_file)) {
     include_once $config_file;
@@ -111,10 +110,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="button" class="btn btn-outline-secondary inner-box border-start-0 text-body password-toggle-btn" onclick="toggleLoginPassword()">
                     <i id="loginEyeIcon" class="bi bi-eye"></i>
                 </button>
-            </div>
-
-            <div class="text-end mt-1">
-                <a href="forgot_password.php" class="text-primary text-decoration-none small fw-bold">Forgot Password?</a>
             </div>
         </div>
 

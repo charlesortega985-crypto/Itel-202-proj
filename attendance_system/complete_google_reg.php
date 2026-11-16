@@ -12,7 +12,7 @@ if (!isset($_SESSION['google_reg'])) {
 $google_email = $_SESSION['google_reg']['email'];
 $google_name  = $_SESSION['google_reg']['full_name'];
 
-$config_file = _DIR_ . '/config/db_connect.php';
+$config_file = 'config/db_connect.php';
 if (file_exists($config_file)) {
     include_once $config_file;
 }
@@ -110,6 +110,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Complete & Continue <i class="bi bi-arrow-right ms-1"></i>
         </button>
     </form>
+
+    <!-- ADDED: Back to Login link -->
+    <div class="text-center mt-4 pt-3 border-top">
+        <small class="text-muted">Changed your mind? <a href="login.php" class="fw-bold text-primary text-decoration-none">Back to Login</a></small>
+    </div>
+
 </div>
 
 <script src="assets/js/theme.js"></script>
