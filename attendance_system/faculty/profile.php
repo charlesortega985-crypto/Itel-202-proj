@@ -169,7 +169,7 @@ $profile_pic = $user_info['profile_pic'] ?? '';
     
     <div class="main-header text-center mb-4">
         <h2 class="fw-bold m-0 d-flex align-items-center justify-content-center gap-2">
-            <i class="bi bi-mortarboard-fill text-primary"></i> Smart Attendance System
+            <i class="bi bi-mortarboard-fill text-primary"></i> Manage Faculty Profile
         </h2>
         <p class="text-muted mb-0 mt-1">Faculty Account Profile & Account Settings</p>
     </div>
